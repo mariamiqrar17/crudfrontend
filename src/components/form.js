@@ -17,13 +17,13 @@ const DeviceForm = () => {
   const [indexing,setIndexing]=useState("")
 
   const [submitMessage, setSubmitMessage] = useState('');
+  const [refetch, setRefetch] = useState(false);
   useEffect(()=>{
     getTodo()
-
-  },[])
+  },[refetch])
   const getTodo = async() =>{
     try {
-        let a = await axios.get("http://localhost:4000/todo/get-todo");
+        let a = await axios.get("https://crudbackend-iota.vercel.app/todo/get-todo");
         setFormData(a.data.Todo)
         
     } catch (error) {
@@ -43,12 +43,13 @@ const DeviceForm = () => {
     }
     try {
         setFlag(true)
-        let b= await axios.post("http://localhost:4000/todo/add-todo",a);
+        let b= await axios.post("https://crudbackend-iota.vercel.app/todo/add-todo",a);
             setFlag(false)
             setBrand("")
             setDescription("")
             setPrice("")
-            setTitle("")        
+            setTitle("")   
+            setRefetch(prev => !prev);     
          } catch (error) {
              console.log(error)   
         }
@@ -57,7 +58,8 @@ const DeviceForm = () => {
 
   const onDeleteHandler = async(iding) =>{
     try {
-        let b= await axios.delete(`http://localhost:4000/todo/delete-todo/${iding}`);
+        let b= await axios.delete(`https://crudbackend-iota.vercel.app/todo/delete-todo/${iding}`);
+        setRefetch(prev => !prev);
         let a = formData.filter((value,index)=>{
             if(value._id!==iding){
                 return value;
@@ -75,13 +77,30 @@ const DeviceForm = () => {
     setTitle(e.target.value)
 
   }
-  const onEditHandler = (value,index) =>{
-    setIndexing(index)
+
+const onEditHandler = async (value, index) => {
+  try {
+    setIndexing(index);
     setBrand(value.brand);
     setTitle(value.title);
     setDescription(value.description);
-    setPrice(value.price)
+    setPrice(value.price);
+
+    const updatedData = {
+      brand: value.brand,
+      title: value.title,
+      description: value.description,
+      price: value.price,
+    };
+
+    await axios.put(`https://crudbackend-iota.vercel.app/todo/update-todo/${value._id}`, updatedData);
+    setRefetch(prev => !prev);
+
+  } catch (error) {
+    console.error('An error occurred during the update:', error);
   }
+};
+
 
   const onBrandHandler=(e)=>{
     setBrand(e.target.value)
