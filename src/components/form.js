@@ -15,15 +15,18 @@ const DeviceForm = () => {
   const [description,setDescription]=useState("")
   const [flag,setFlag]=useState(false);
   const [indexing,setIndexing]=useState("")
-
+  const [isEdit, setIsEdit] = useState(false);
+  const [updateflag,setUpdateflag]=useState(false)
+ 
   const [submitMessage, setSubmitMessage] = useState('');
-  const [refetch, setRefetch] = useState(false);
+  
   useEffect(()=>{
-    getTodo()
-  },[refetch])
+    getTodo();
+    
+  },[])
   const getTodo = async() =>{
     try {
-        let a = await axios.get("https://crudbackend-iota.vercel.app/todo/get-todo");
+        let a = await axios.get("https://backend-todo-eight.vercel.app/todo/get-todo");
         setFormData(a.data.Todo)
         
     } catch (error) {
@@ -33,9 +36,10 @@ const DeviceForm = () => {
 
   
 
-  const handleSubmit = async(e) => {
+  const onAddHandler = async(e) => {
     e.preventDefault();
-    let a = {
+    if(!isEdit){
+      let a = {
         title:title,
         description:description,
         price:price,
@@ -43,23 +47,36 @@ const DeviceForm = () => {
     }
     try {
         setFlag(true)
-        let b= await axios.post("https://crudbackend-iota.vercel.app/todo/add-todo",a);
+        let b = await axios.post("https://backend-todo-eight.vercel.app/todo/add-todo",a);
+        setFormData([...formData,a])
             setFlag(false)
             setBrand("")
             setDescription("")
             setPrice("")
             setTitle("")   
-            setRefetch(prev => !prev);     
+              
          } catch (error) {
              console.log(error)   
         }
+    }else{
+      const updatedObj = {
+        title,price,brand,description, id:indexing
+      }
+      console.log(indexing)
+      fetch("https://crudbackend-iota.vercel.app/todo/update-todo", {
+        method: "POST",
+        body: JSON.stringify(updatedObj)
+      }).then(updated => updated.json()).then(final => console.log(final)).catch(err => console.log(err))
+     
+    }
+   
 
   };
 
   const onDeleteHandler = async(iding) =>{
     try {
-        let b= await axios.delete(`https://crudbackend-iota.vercel.app/todo/delete-todo/${iding}`);
-        setRefetch(prev => !prev);
+        let b= await axios.delete(`https://backend-todo-eight.vercel.app/todo/delete-todo/${iding}`);
+       
         let a = formData.filter((value,index)=>{
             if(value._id!==iding){
                 return value;
@@ -77,30 +94,18 @@ const DeviceForm = () => {
     setTitle(e.target.value)
 
   }
-
-const onEditHandler = async (value, index) => {
-  try {
-    setIndexing(index);
-    setBrand(value.brand);
-    setTitle(value.title);
-    setDescription(value.description);
-    setPrice(value.price);
-
-    const updatedData = {
-      brand: value.brand,
-      title: value.title,
-      description: value.description,
-      price: value.price,
-    };
-
-    await axios.put(`https://crudbackend-iota.vercel.app/todo/update-todo/${value._id}`, updatedData);
-    setRefetch(prev => !prev);
-
-  } catch (error) {
-    console.error('An error occurred during the update:', error);
-  }
-};
-
+  const onEditHandler = async (value, index) => {
+   
+setUpdateflag(true)
+      setIndexing(index);
+      setBrand(value.brand);
+      setTitle(value.title);
+      setDescription(value.description);
+      setPrice(value.price);
+      
+     
+  
+  };
 
   const onBrandHandler=(e)=>{
     setBrand(e.target.value)
@@ -111,13 +116,46 @@ const onEditHandler = async (value, index) => {
   const onDescriptonHandler=(e)=>{
     setDescription(e.target.value)
   }
+  const onUpdateHandler = async() =>{
+
+    let a = {
+      title:title,
+      description:description,
+      price:price,
+      brand:brand,
+  }
+  try {
+    let b= await axios.put(`https://backend-todo-eight.vercel.app/todo/update-todo/${indexing}`,a);
+    console.log("sdafdfsdfsdf",b)
+    let c = formData.map((value,index)=>{
+    
+      if(value._id===indexing){
+        return a
+      }
+      else{
+        return value
+      }
+  
+    })
+    setFormData(c)
+    setUpdateflag(false)
+    setTitle("")
+    setBrand("")
+    setDescription("")
+    setPrice("")
+    
+  } catch (error) {
+    
+  }
+  
+}
 
   return (
     <div>
     <div className="flex items-center justify-center ">
-      <form data-aos="zoom-in"
+      <div data-aos="zoom-in"
         className="bg-white shadow-md rounded px-8 pt-6 pb-8 mt-6 mb-4 w-96"
-        onSubmit={handleSubmit}>
+       >
          <div  className="mb-4 text-xl font-bold">
             Enter your device details
          </div>
@@ -181,22 +219,33 @@ const onEditHandler = async (value, index) => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <button disabled={flag}
+          {updateflag?<button disabled={flag} onClick={onUpdateHandler}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="submit"
+          >
+        {flag?"Updating" : "Update"}
+          </button>:
+          
+          <button disabled={flag} onClick={onAddHandler}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             type="submit"
           >
         {flag?"Submitting" : "Submit"}
           </button>
+}
         </div>
 
         {submitMessage && (
           <div className="mt-4 text-green-600 text-sm">{submitMessage}</div>
         )}
-      </form>
+      </div>
 
     </div>
    
     <div class="relative overflow-x-auto flex items-center justify-center">
+    {
+      formData.length>0?
+    
   <table class="w-96 text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
       <tr className='font-extrabold text-lg'>
@@ -260,6 +309,8 @@ const onEditHandler = async (value, index) => {
       );
     })}
   </table>
+:""
+}
 </div>
 
     </div>
